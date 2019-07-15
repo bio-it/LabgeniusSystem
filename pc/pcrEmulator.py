@@ -15,9 +15,8 @@ logger = logging.getLogger(__name__)
 context = zmq.Context()
 listener = context.socket(zmq.REP)
 listener.bind('tcp://*:6060')
-listener.setsockopt(zmq.RCVTIMEO, 500)
 
-
+# listener.setsockopt(zmq.RCVTIMEO, 500)
 # For emulator data
 
 # state
@@ -25,7 +24,7 @@ listener.setsockopt(zmq.RCVTIMEO, 500)
 class Emulator(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-        self.daemon = False
+        self.daemon = True
 
         # False : idle, True: running
         self.emulatorState = False
@@ -76,6 +75,7 @@ while True:
 
 		logging.info("Command T received : %f" % targetTemp)
 		emulator.setTemperature(targetTemp)
+		listener.send_json({'result':'ok'})
 	elif message['command'] == 'C':
 		currentTemp = emulator.getTemperature()
 		currentState = emulator.getState()
