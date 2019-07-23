@@ -8,10 +8,10 @@ import datetime
 import logging
 import zmq
 
-from enum import Enum
+from enum import IntEnum
 import math
 
-class State(Enum):
+class State(IntEnum):
     READY = 0x00,
     RUNNING = 0x01,
     ERROR = 0x02,
@@ -300,11 +300,11 @@ class PCRThread(threading.Thread):
         self.processCleanupPCR()
 
     def getStatus(self):
-        # protocols = [protocol.toDict() for protocol in self.protocols]
+        protocols = [protocol.toDict() for protocol in self.protocols]
 
         data = {
             "running" : self.running,
-            "state" : int(self.state.value),
+            "state" : int(self.state),
             "temperature" : self.currentTemp,
             "remainingSec" : self.leftSec,
             "remainingTotalSec" : self.leftTotalSec,
@@ -312,6 +312,7 @@ class PCRThread(threading.Thread):
             "currentActionNumber" : self.currentActionNumber,
             "totalActionNumber" : self.totalActionNumber,
             "elapsedTime" : self.elapsedTime,
+            "protocols" : protocols,
         }
         # For GUI display information.
         # Return the status information.

@@ -61,7 +61,7 @@ class Status(Resource):
 
 		response = {
 			'result' : 'ok',
-			'data' : 'test'
+			'data' : pcrThread.getStatus()
 		}
 
 		return response, 200
