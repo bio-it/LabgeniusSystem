@@ -9,5 +9,8 @@ from api.pcr import pcr
 # list of PCR api
 bp_pcr = Blueprint('api_pcr', __name__)
 api_pcr = Api(bp_pcr)
+
 api_pcr.add_resource(pcr.Start, '/start')
+api_pcr.add_resource(pcr.Stop, '/stop')
+api_pcr.add_resource(pcr.Status, '/status')
 

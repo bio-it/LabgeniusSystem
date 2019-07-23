@@ -39,7 +39,7 @@ class Emulator(threading.Thread):
     				self.emulatorTemp -= 0.1
     			elif '%.1f' % self.emulatorTemp < '%.1f' % self.emulatorTargetTemp:
 	    			self.emulatorTemp += 0.1
-    		time.sleep(0.1)
+    		time.sleep(0.05)
 
     def setTemperature(self, targetTemp):
     	self.emulatorTargetTemp = targetTemp

@@ -40,4 +40,4 @@ if __name__ == '__main__':
     # Initialize the flask server
     app = Flask(__name__)
     app.register_blueprint(bp.bp_pcr, url_prefix='/api/pcr')
-    app.run(host='localhost', port=6009, debug=True, use_reloader=False)
+    app.run(host='210.115.227.99', port=6009, debug=True, use_reloader=False)
