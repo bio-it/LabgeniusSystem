@@ -34,6 +34,23 @@ class Start(Resource):
 
 		return response, 200
 
+	def post(self):
+		# Check the current state first
+		logger.info("test1")
+
+		if pcrThread.isRunning():
+			response = {
+				'result' : 'fail',
+				'reason' : 'already started'
+			}
+		else:
+			pcrThread.startPCR()
+			response = {
+				'result' : 'ok'
+			}
+
+		return response, 200
+
 class Stop(Resource):
 	def get(self):
 		# Check the current state first
@@ -52,8 +69,38 @@ class Stop(Resource):
 
 		return response, 200
 
+	def post(self):
+		# Check the current state first
+		logger.info("test2")
+
+		if pcrThread.isRunning():
+			pcrThread.stopPCR()
+			response = {
+				'result' : 'ok'
+			}
+		else:
+			response = {
+				'result' : 'fail',
+				'reason' : 'PCR is not running now.'
+			}
+
+		return response, 200
+
 class Status(Resource):
 	def get(self):
+		# Check the current state first
+		logger.info("test3")
+
+		logger.info(pcrThread.getStatus())
+
+		response = {
+			'result' : 'ok',
+			'data' : pcrThread.getStatus()
+		}
+
+		return response, 200
+
+	def post(self):
 		# Check the current state first
 		logger.info("test3")
 

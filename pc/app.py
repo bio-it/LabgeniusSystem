@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask
+from flask_cors import CORS
 from api import api as bp
 
 import logging
@@ -39,5 +40,8 @@ def stopTempControl():
 if __name__ == '__main__':
     # Initialize the flask server
     app = Flask(__name__)
+    cors = CORS(app, resources={
+        r"/api/*": {"origins": "*"}
+        })
     app.register_blueprint(bp.bp_pcr, url_prefix='/api/pcr')
     app.run(host='210.115.227.99', port=6009, debug=True, use_reloader=False)
