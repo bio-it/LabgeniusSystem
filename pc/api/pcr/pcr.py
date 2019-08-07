@@ -19,8 +19,6 @@ pcrThread.start()
 class Start(Resource):
 	def get(self):
 		# Check the current state first
-		logger.info("test1")
-
 		if pcrThread.isRunning():
 			response = {
 				'result' : 'fail',
@@ -36,8 +34,6 @@ class Start(Resource):
 
 	def post(self):
 		# Check the current state first
-		logger.info("test1")
-
 		if pcrThread.isRunning():
 			response = {
 				'result' : 'fail',
@@ -54,8 +50,6 @@ class Start(Resource):
 class Stop(Resource):
 	def get(self):
 		# Check the current state first
-		logger.info("test2")
-
 		if pcrThread.isRunning():
 			pcrThread.stopPCR()
 			response = {
@@ -71,8 +65,6 @@ class Stop(Resource):
 
 	def post(self):
 		# Check the current state first
-		logger.info("test2")
-
 		if pcrThread.isRunning():
 			pcrThread.stopPCR()
 			response = {
@@ -89,10 +81,6 @@ class Stop(Resource):
 class Status(Resource):
 	def get(self):
 		# Check the current state first
-		logger.info("test3")
-
-		logger.info(pcrThread.getStatus())
-
 		response = {
 			'result' : 'ok',
 			'data' : pcrThread.getStatus()
@@ -102,10 +90,6 @@ class Status(Resource):
 
 	def post(self):
 		# Check the current state first
-		logger.info("test3")
-
-		logger.info(pcrThread.getStatus())
-
 		response = {
 			'result' : 'ok',
 			'data' : pcrThread.getStatus()
