@@ -1,48 +1,73 @@
 # -*- coding: utf-8 -*-
 
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser  # ver. < 3.0
-
-
+import pickle
+import logging
 import sqlite3 as db
+import json
+
+# logger
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def getRecentProtocol():
-	config = ConfigParser()
-	config.read('database.ini')
+	# default protocol
+	defaultProtocol = [{"label":"1", "temp":95.0, "time":10},{"label":"2", "temp":95.0, "time":5},{"label":"3", "temp":55.0, "time":5},{"label":"4", "temp":72.0, "time":5},{"label":"GOTO", "temp":2.0, "time":4},{"label":"5", "temp":72.0, "time":5}]
 
 	try:
-		protocolIdx = config.getint('data', 'recent_protocol')
+		with open('database.prop', 'rb') as f:
+			protocolName = pickle.load(f)	# line by line
+			filters = pickle.load(f)
+			protocol = pickle.load(f)
 
-		# load protocol from database
-	except:
-		# Load default protocol
-		pass
+			# save to list data
+			protocol = json.loads(protocol)
+	except Exception as e:
+		logger.info(str(e))
+		# Load the first protocol and setting the default protocol
+		logger.info("No recent protocol data.")
 
+		protocolList = getProtocolList()
 
-def setRecentProtocol(protocolIdx):
-	config = ConfigParser()
-	config.read('database.ini')
+		# No protocol list on the database, make new protocol
+		if len(protocolList) == 0:
+			protocolName = 'Default protocol'
+			filters = 'FAM'
+			protocol = defaultProtocol
+			setRecentProtocol(protocolName, filters, json.dumps(defaultProtocol))
+		else: # Load the first protocol.
+			protocolName = protocolList[0][1]
+			filters = protocolList[0][2]
+			protocol = protocolList[0][4]
+			setRecentProtocol(protocolName, filters, protocol)
 
-	config.set('data', 'recent_protocol', protocolIdx)
+			# save to list data
+			protocol = json.loads(protocol)
 
-	with open('database.ini', 'w') as configFile:
-		config.write(configFile)
+	return (protocolName, filters, protocol)
 
+def setRecentProtocol(name, filters, protocol):
+	with open('database.prop', 'wb') as f:
+		pickle.dump(name, f)
+		pickle.dump(filters, f)
+		pickle.dump(protocol, f)
 
 # Protocol database
 def getProtocolList():
-	result = []
 	conn = db.connect('database.db')
 	cursor = conn.execute('select * from protocols')
 	data = cursor.fetchall()
-	print(data)
 	conn.close()
-	return result
+	return data
 
-def insertNewProtocol(name, protocol):
+def insertNewProtocol(name, filters, protocol):
 	conn = db.connect('database.db')
-	conn.execute("insert into protocols (name, protocol) values('%s', '%s')" % (name, protocol))
+	conn.execute("insert into protocols (name, filters, protocol) values('%s', '%s', '%s')" % (name, filters, protocol))
 	conn.commit()
 	conn.close()
+
+def getProtocol(idx):
+	conn = db.connect('database.db')
+	cursor = conn.execute('select * from protocols where id=%d' % idx)
+	data = cursor.fetchall()
+	conn.close()
+	return data

@@ -11,6 +11,8 @@ import zmq
 from enum import IntEnum
 import math
 
+from api.pcr import util
+
 class State(IntEnum):
     READY = 0x00,
     RUNNING = 0x01,
@@ -72,20 +74,18 @@ class PCRThread(threading.Thread):
         self.currentTargetTemp = 25.0
 
         self.elapsedTime = ''
+        self.totalActionNumber = 0
 
-        logger.info('initialize..')
-
-        # Initialize emulator protocols
-        # No check protocol parsing error now.
+        # load recent protocol first
         self.protocols = []
-        self.protocols.append(Protocol('1', 95.0, 10))
-        self.protocols.append(Protocol('2', 95.0, 5))
-        self.protocols.append(Protocol('3', 55.0, 5))
-        self.protocols.append(Protocol('4', 72.0, 5))
-        self.protocols.append(Protocol('GOTO', 2.0, 4))
-        self.protocols.append(Protocol('5', 72.0, 5))
+        protocolData = util.getRecentProtocol()
+        self.protocolName = protocolData[0]
+        self.filters = protocolData[1]
 
-        # Total protocol number
+        for protocol in protocolData[2]:
+            self.protocols.append(Protocol(protocol['label'], float(protocol['temp']), int(protocol['time'])))
+
+        logger.info(self.protocols)
         self.totalActionNumber = len(self.protocols)
 
         # Calculate the protocol left times
@@ -116,7 +116,8 @@ class PCRThread(threading.Thread):
 
                     self.leftTotalSec += tempTime
             else:
-                self.leftTotalSec += time
+                if label != 'SHOT':
+                    self.leftTotalSec += time
 
     # For getting the device status
     def run(self):
@@ -145,7 +146,7 @@ class PCRThread(threading.Thread):
                         continue
 
                     # If current protocol is not GOTO label
-                    if self.protocols[self.currentActionNumber].label != 'GOTO':
+                    if self.protocols[self.currentActionNumber].label != 'GOTO' and self.protocols[self.currentActionNumber].label != 'SHOT':
                         logger.info("Current protocol is not GOTO : %s " % self.protocols[self.currentActionNumber].label)
                         self.prevTargetTemp = self.currentTargetTemp
                         self.currentTargetTemp = self.protocols[self.currentActionNumber].temp
@@ -163,7 +164,7 @@ class PCRThread(threading.Thread):
                         logger.info(result)
 
                         # Timeout...?
-                    else:   # GOTO label
+                    elif self.protocols[self.currentActionNumber].label == 'GOTO':   # GOTO label
                         if self.leftGotoCount < 0:
                             self.leftGotoCount = int(self.protocols[self.currentActionNumber].time)
 
@@ -184,6 +185,8 @@ class PCRThread(threading.Thread):
                                     self.currentActionNumber = i-1
                                     logger.info("Target GOTO label found, %d" % self.currentActionNumber)
                                     break
+                    else:   # SHOT label
+                        logger.info("SHOT label is ignored now.")
                 else:   # the action is running now.
                     if not self.targetArrival:   # not yet arrived the target temperature.
                         # for timeout routine, currently ignore it.
@@ -230,8 +233,6 @@ class PCRThread(threading.Thread):
             # 1 second
             time.sleep(1)
 
-
-
     def initValues(self):
         self.targetArrival = False
         self.targetArrivalFlag = False
@@ -250,10 +251,19 @@ class PCRThread(threading.Thread):
 
         self.elapsedTime = ''
 
-        # For emulator only
+        # load recent protocol first
+        self.protocols = []
+        protocolData = util.getRecentProtocol()
+        self.protocolName = protocolData[0]
+        self.filters = protocolData[1]
+
+        for protocol in protocolData[2]:
+            self.protocols.append(Protocol(protocol['label'], float(protocol['temp']), int(protocol['time'])))
+
+        logger.info(self.protocols)
+
         self.totalActionNumber = len(self.protocols)
 
-        # For emulator only
         # Calculate the protocol left times
         for idx, protocol in enumerate(self.protocols):
             label = protocol.label
@@ -282,7 +292,8 @@ class PCRThread(threading.Thread):
 
                     self.leftTotalSec += tempTime
             else:
-                self.leftTotalSec += time
+                if label != 'SHOT':
+                    self.leftTotalSec += time
 
     def startPCR(self):
         logger.info("called start")
@@ -291,7 +302,7 @@ class PCRThread(threading.Thread):
         # Currently, just start the PCR.
         self.initValues()
         self.startTime = datetime.datetime.now()
-        currentTargetTemp = self.protocols[0].temp
+        self.currentTargetTemp = self.protocols[0].temp
 
         self.running = True
         self.state = State.RUNNING
@@ -313,6 +324,8 @@ class PCRThread(threading.Thread):
             "totalActionNumber" : self.totalActionNumber,
             "elapsedTime" : self.elapsedTime,
             "protocols" : protocols,
+            "protocolName" : self.protocolName,
+            "filters" : self.filters
         }
         # For GUI display information.
         # Return the status information.
