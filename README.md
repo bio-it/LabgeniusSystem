@@ -33,15 +33,15 @@ New labgenius system for Raspberry pi
 2. Protocol select
 	- http://210.115.227.99:6009/api/pcr/protocol/select
 	- 사용할 프로토콜을 선택할 수 있습니다.
-	- POST 방식만 사용가능하며, 데이터로 숫자값(idx) 을 받습니다.
+	- POST 방식만 사용가능하며, 데이터로 idx 를 받습니다(text 타입으로 숫자 값만 보내주세요).
 	- idx 값을 위의 list API 에서 얻을 수 있으며, 이외의 값은 에러를 반환합니다.
-	- 현재 select 호출 시에 바로 status 에 적용되지 않습니다.
 	- select 시 최근 프로토콜에 저장되며, 이 값은 저장된 프로토콜 목록에서 제거하거나 수정해도 변경되지 않습니다.
 
 3. Check protocol data
 	- http://210.115.227.99:6009/api/pcr/protocol/check
 	- 프로토콜 데이터의 유효성을 판단합니다.
 	- POST 방식만 사용가능하며, filter 값을 포함한 전체 프로토콜 리스트를 받습니다.
+	- text 타입으로 값을 전달해주세요.
 	- 각 프로토콜 라인은 "\r\n" 로 구분됩니다.
 	- 맨 첫줄에는 프로토콜 필터 값이 ", " 로 구분되어 있어야 합니다.
 	- 필터의 종류는 FAM, HEX, ROX, CY5 이며 대문자로만 받습니다.
@@ -57,17 +57,31 @@ New labgenius system for Raspberry pi
 	- 첫 줄은 프로토콜 이름, 두번째 줄은 필터, 세번째 줄부터 프로토콜 데이터 입니다.
 	- 필터의 종류는 FAM, HEX, ROX, CY5 이며 대문자로만 받습니다.
 	- 입력 오류에 틀린 라인과 함께 어떤 점이 틀렸는지 이유가 반환됩니다.
+	- text 타입으로 값을 전달해주세요.
 
-5. Edit protocol, Delete protocol
+5. Edit protocol
 	- http://210.115.227.99:6009/api/pcr/protocol/edit
+	- 프로토콜을 수정하기 위한 기능입니다.
+	- POST 방식으로만 사용가능하며, 맨 윗줄에 idx 값과 변경할 프로토콜 데이터를 받습니다.
+	- 각 프로토콜 라인은 "\r\n" 로 구분됩니다.
+	- 첫 줄은 idx 값, 두번째 줄은 필터, 세번째 줄부터 프로토콜 데이터 입니다.
+	- 필터의 종류는 FAM, HEX, ROX, CY5 이며 대문자로만 받습니다.
+	- 입력 오류에 틀린 라인과 함께 어떤 점이 틀렸는지 이유가 반환됩니다.
+	- text 타입으로 값을 전달해주세요.
+
+6. Delete protocol
 	- http://210.115.227.99:6009/api/pcr/protocol/delete
-
-	- 아직 개발중입니다. 현재 에러만 반환됩니다.
-
+	- 프로토콜을 삭제하기 위한 기능입니다.
+	- POST 방식으로만 사용가능하며, 맨 윗줄에 idx 값을 받습니다.
+	- idx 값을 위의 list API 에서 얻을 수 있으며, 이외의 값은 에러를 반환합니다.
+	- text 타입으로 값을 전달해주세요.
 
 # TODO list
-1. Emulator 에 리셋 명령어 및 추가된 명령어 추가
-2. Edit, Delete 기능 추가
-3. Select API 수행 시에 바로 적용되도록 수정(현재는 select 수행 후, start 를 해야 status API 의 protocols 정보가 수정됨)
-4. Protocol API 에서 PCR 동작 중에 Select API 가 동작 안되도록 수정하는 작업 수행.
-5. select API 에서 select 된 값이 현재는 프로토콜 자체가 저장되도록 수정되어 있어, 추후에 edit 를 하거나 삭제하는 경우에 대한 시나리오 추가 구현 필요.
+
+1. Chip 관련 프로토콜 구성
+2. Chip protocol 에 대한 구성
+3. Chip 데이터 저장을 위한 database 구성.
+4. Chip Emulator 구현
+
+5. PCR Emulator 대신 실제 장비 테스트
+6. ZMQ 기능 테스트 및 타임 아웃 기능 추가.

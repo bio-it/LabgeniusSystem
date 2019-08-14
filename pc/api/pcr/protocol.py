@@ -3,6 +3,7 @@
 from flask_restful import Resource
 from flask import request
 import logging
+import requests
 
 import json
 
@@ -176,19 +177,42 @@ class ProtocolSelect(Resource):
 			idx = int(requestData)
 			protocol = util.getProtocol(idx)
 
-			logger.info(protocol)
-
 			if len(protocol) == 0:
 				response = {
 					'result' : 'fail',
 					'reason' : 'Failed to load the protocol(database error).'
 				}
 			else:
-				util.setRecentProtocol(protocol[0][1], protocol[0][2], protocol[0][4])
-				response = {
-					'result' : 'ok'
-				}
+				# Request the PCR status
+				status = requests.post('http://210.115.227.99:6009/api/pcr/status')
+
+				# not running
+				if not status.json()["data"]["running"]:
+					# Setting the protocol first
+					util.setRecentProtocol(protocol[0][1], protocol[0][2], protocol[0][4])
+
+					result = requests.post('http://210.115.227.99:6009/api/pcr/reloadProtocol')
+
+					logger.info(result.json())
+
+					if result.json()["result"] == "ok":
+						response = {
+							'result' : 'ok'
+						}
+					else:
+						response = {
+							'result' : 'fail',
+							'reason' : 'Can\'t change the protocol when the PCR is running'
+						}
+				else:
+					# running the PCR
+					response = {
+						'result' : 'fail',
+						'reason' : 'Can\'t change the protocol when the PCR is running'
+					}
+
 		except Exception as e:
+			logger.info(str(e))
 			response = {
 				'result' : 'fail',
 				'reason' : 'Invalid protocol idx parameter.'
@@ -228,11 +252,24 @@ class DeleteProtocol(Resource):
 		requestData = request.data
 		requestData = requestData.decode('utf-8')
 
+		try:
+			idx = int(requestData)
+			result = util.deleteProtocol(idx)
 
-		response = {
-			'result' : 'fail',
-			'reason' : 'not implement yet.'
-		}
+			if result:
+				response = {
+					'result' : 'ok',
+				}
+			else:
+				response = {
+					'result' : 'fail',
+					'reason' : 'Invalid range of idx parameter'
+				}
+		except:
+			response = {
+				'result' : 'fail',
+				'reason' : 'Invalid protocol idx parameter.'
+			}
 
 		return response, 200
 
@@ -240,11 +277,44 @@ class EditProtocol(Resource):
 	def post(self):
 		requestData = request.data
 		requestData = requestData.decode('utf-8')
+		lines = requestData.split('\r\n')
 
-		response = {
-			'result' : 'fail',
-			'reason' : 'not implement yet.'
-		}
+		# Check lines
+		if len(lines) < 4:
+			response = {
+				'result' : 'fail',
+				'reason' : 'Invalid protocol data.'
+			}
+		else:
+			try:
+				idx = int(lines[0])
+
+				response = checkProtocol(lines[1:])
+
+				if response['result'] == 'ok':
+					# save the protocol into the database with name
+
+					# need to make the protocol type of string
+					filters = lines[1]
+					protocol = convertToProtocol(lines[2:])
+
+					result = util.editProtocol(idx, filters, protocol)
+					logger.info(result)
+
+					if result:
+						response = {
+							'result' : 'ok',
+						}
+					else:
+						response = {
+							'result' : 'fail',
+							'reason' : 'Invalid range of idx parameter'
+						}
+			except:
+				response = {
+					'result' : 'fail',
+					'reason' : 'Invalid protocol idx parameter.'
+				}
 
 		return response, 200
 

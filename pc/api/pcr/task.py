@@ -142,6 +142,12 @@ class PCRThread(threading.Thread):
                     if self.currentActionNumber >= self.totalActionNumber:
                         logger.info("End of protocol.")
                         self.completePCR = True
+
+                        # Send to reset command
+                        self.client.send_json({"command":"R"})
+                        result = self.client.recv_json()
+
+                        logger.info(result)
                         self.processCleanupPCR()
                         continue
 
@@ -331,9 +337,14 @@ class PCRThread(threading.Thread):
         # Return the status information.
         return data
 
-    # not yet confirmed
-    def setProtocol(self):
-        pass
+    # internal protocol
+    def reloadProtocol(self):
+        if self.running:
+            return False
+
+        # reload the protocol
+        self.initValues()
+        return True
 
     def isRunning(self):
         return self.running

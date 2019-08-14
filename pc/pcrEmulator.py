@@ -91,4 +91,9 @@ while True:
 			listener.send_json({'result':'ok'})
 		else:
 			listener.send_json({'result':'fail'})
+	elif message['command'] == 'R': # reset
+		emulator.stopEmulator()
+		listener.send_json({'result':'ok'})
+
+# No function about the Fan.
 

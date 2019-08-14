@@ -71,3 +71,21 @@ def getProtocol(idx):
 	data = cursor.fetchall()
 	conn.close()
 	return data
+
+def deleteProtocol(idx):
+	conn = db.connect('database.db')
+	cursor = conn.execute('delete from protocols where id=%d' % idx)
+	result = cursor.rowcount == 1
+	conn.commit()
+	conn.close()
+
+	return result
+
+def editProtocol(idx, filters, protocol):
+	conn = db.connect('database.db')
+	cursor = conn.execute("update protocols set filters = '%s', protocol = '%s' where id=%d" % (filters, protocol, idx))
+	result = cursor.rowcount == 1
+	conn.commit()
+	conn.close()
+
+	return result
