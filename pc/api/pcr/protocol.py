@@ -184,14 +184,14 @@ class ProtocolSelect(Resource):
 				}
 			else:
 				# Request the PCR status
-				status = requests.post('http://210.115.227.99:6009/api/pcr/status')
+				status = requests.post('http://210.115.227.78:6009/api/pcr/status')
 
 				# not running
 				if not status.json()["data"]["running"]:
 					# Setting the protocol first
 					util.setRecentProtocol(protocol[0][1], protocol[0][2], protocol[0][4])
 
-					result = requests.post('http://210.115.227.99:6009/api/pcr/reloadProtocol')
+					result = requests.post('http://210.115.227.78:6009/api/pcr/reloadProtocol')
 
 					logger.info(result.json())
 

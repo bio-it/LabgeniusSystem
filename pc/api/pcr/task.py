@@ -7,6 +7,7 @@ import datetime
 
 import logging
 import zmq
+import smbus
 
 from enum import IntEnum
 import math
