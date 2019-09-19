@@ -130,7 +130,7 @@ void loop() {
   
   // Refrigerator
   if (Status == STATUS_READY) {
-    digitalWrite(PIN_FAN, Fan);
+    digitalWrite(PIN_FAN, HIGH);
   }
   
   // Temperature PID Control
