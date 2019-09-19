@@ -13,7 +13,7 @@
 
 /* DEFINES ************************************************************ */
 
-//#define DEBUG
+#define DEBUG
 
 /* Serial */
 
@@ -235,37 +235,43 @@ void requestEvent() {
 
 void receiveEvent(int len) {
   if (Wire.available() > 0) {
-    Protocol.Command = Wire.read();
-    Protocol.Data1 = Wire.read();
-    Protocol.Data2 = Wire.read();
-    
-    if (Protocol.Command == 'R') {   // Reset
-      Status = STATUS_READY;
-      reset();
-    }
-    
-    if (Status != STATUS_ERR) {
-      if (Protocol.Command == 'T') { // Temperature
-        Status = STATUS_RUN;
-        preTarget = curTarget;
-        curTarget = Protocol.Data1;
-        findPID();
-        
-        targetTempFlag  = preTarget > curTarget;
-        freeRunning     = false;
-        isTargetArrival = false;
-      }
+    // for ignore the command packet
+    if(len == 4){
+      byte dummy = Wire.read();
       
-      if (Protocol.Command == 'F') { // Fan
-        reset();
-        
+      Protocol.Command = Wire.read();
+      Protocol.Data1 = Wire.read();
+      Protocol.Data2 = Wire.read();
+    
+      if (Protocol.Command == 'R') {   // Reset
         Status = STATUS_READY;
-        Fan = Protocol.Data1;
+        reset();
       }
-    }
+    
+      if (Status != STATUS_ERR) {
+        if (Protocol.Command == 'T') { // Temperature
+          Status = STATUS_RUN;
+          preTarget = curTarget;
+          curTarget = Protocol.Data1;
+          findPID();
+          
+          targetTempFlag  = preTarget > curTarget;
+          freeRunning     = false;
+          isTargetArrival = false;
+        }
+      
+        if (Protocol.Command == 'F') { // Fan
+          reset();
+          
+          Status = STATUS_READY;
+          Fan = Protocol.Data1;
+        }
+      }
+    
 #ifdef DEBUG
     printProtocol();
 #endif
+    }
   }
 }
 
@@ -297,6 +303,7 @@ void printProtocol() {
   Serial.print(Protocol.Data1);
   Serial.print(", ");
   Serial.println(Protocol.Data2);
+  Serial.println(Temper);
 }
 
 /* ******************************************************************** */

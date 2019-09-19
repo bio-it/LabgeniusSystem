@@ -79,48 +79,33 @@ while True:
 		targetTemp = message["targetTemp"]
 
 		logging.info("Command T received : %f" % targetTemp)
-		i2c.write_byte(ADDRESS, ord('T'))
-		i2c.write_byte(ADDRESS, int(targetTemp))
-		i2c.write_byte(ADDRESS, 0x00)
 
-		logger.info("Received : %d" % i2c.read_byte(ADDRESS))
-		logger.info("Received : %d" % i2c.read_byte(ADDRESS))
-		logger.info("Received : %d" % i2c.read_byte(ADDRESS))
+		send_data = [ord('T'), int(targetTemp), 0x00]
+		i2c.write_i2c_block_data(ADDRESS, 0x00, send_data)
 
 		listener.send_json({'result':'ok'})
 	elif message['command'] == 'C':
-		i2c.write_byte(ADDRESS, ord('C'))
-		i2c.write_byte(ADDRESS, 0x00)
-		i2c.write_byte(ADDRESS, 0x00)
+		send_data = [ord('C'), 0x00, 0x00]
+		i2c.write_i2c_block_data(ADDRESS, 0x00, send_data)
 
-		dummy = i2c.read_byte(ADDRESS)
-		temp1 = i2c.read_byte(ADDRESS)
-		temp2 = i2c.read_byte(ADDRESS)
+		received_data = i2c.read_i2c_block_data(ADDRESS, 0x00)
 
-		logger.info("test : %d %d %d " % (dummy, temp1, temp2))
+		logger.info("test : %d %d %d " % (received_data[0], received_data[1], received_data[2]))
 
-		currentTemp = float(temp1)
+		currentTemp = float(received_data[1])
 		currentState = 0
 
 		logging.info("Command C received : %s, %f" % (currentState, currentTemp))
 		listener.send_json({'result':'ok', 'state':'%s'%currentState, 'temp':'%.1f' % currentTemp})
 	elif message['command'] == 'S':
-		i2c.write_byte(ADDRESS, ord('R'))
-		i2c.write_byte(ADDRESS, 0x00)
-		i2c.write_byte(ADDRESS, 0x00)
+		send_data = [ord('S'), 0x00, 0x00]
+		i2c.write_i2c_block_data(ADDRESS, 0x00, send_data)
 
-		dummy = i2c.read_byte(ADDRESS)
-		temp1 = i2c.read_byte(ADDRESS)
-		temp2 = i2c.read_byte(ADDRESS)
 		listener.send_json({'result':'ok'})
 	elif message['command'] == 'R': # reset
-		i2c.write_byte(ADDRESS, ord('R'))
-		i2c.write_byte(ADDRESS, 0x00)
-		i2c.write_byte(ADDRESS, 0x00)
+		send_data = [ord('R'), 0x00, 0x00]
+		i2c.write_i2c_block_data(ADDRESS, 0x00, send_data)
 
-		dummy = i2c.read_byte(ADDRESS)
-		temp1 = i2c.read_byte(ADDRESS)
-		temp2 = i2c.read_byte(ADDRESS)
 		listener.send_json({'result':'ok'})
 
 # No function about the Fan.
