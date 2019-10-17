@@ -13,7 +13,7 @@
 
 /* DEFINES ************************************************************ */
 
-#define DEBUG
+// #define DEBUG
 
 /* Serial */
 
@@ -101,56 +101,56 @@ int freeRunningCounter  = 0;
 void setup() {
 #ifdef DEBUG
   Serial.begin(BAUDRATE);
-  
+
   while (!Serial);
 #endif
   Wire.begin(ADDRESS);
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
-  
+
   pinMode(PIN_FAN, OUTPUT);
   pinMode(PIN_HEATER, OUTPUT);
   pinMode(PIN_THERMISTOR, INPUT);
-  
+
   controlOff();
 }
 
 void loop() {
   unsigned long startTime = micros();
   int processTime = PROCESS_PERIOD;
-  
+
   // Read Temperature
   measure();
-  
+
   // Check Overheat
   if (Temper > OVERHEAT) {
     Status = STATUS_ERR;
     reset();
   }
-  
+
   // Refrigerator
   if (Status == STATUS_READY) {
-    digitalWrite(PIN_FAN, HIGH);
+    digitalWrite(PIN_FAN, Fan);
   }
-  
+
   // Temperature PID Control
   if (Status == STATUS_RUN) {
     control();
   }
-  
+
   processTime -= micros() - startTime;
   delayMicroseconds(processTime > 0 ? processTime : 0);
 }
 
 void measure() {
   Raw_Temper = analogRead(PIN_THERMISTOR);
-  
+
   const float u = Raw_Temper / 1024.0f;
   const float r = (1/u-1)*RREF;
   const float lnR = log(r);
   const float temp = a0 + a1 * lnR + a3 * pow(lnR, 3);
   const float inv = 1 / temp;
-  
+
   Temper = inv - T0;
 }
 
@@ -162,10 +162,10 @@ void control() {
       controlOff();
     }
   }
-  
+
   if (freeRunning) {
     freeRunningCounter++;
-    
+
     if (freeRunningCounter >= (3000000 / PROCESS_PERIOD)) {
       targetTempFlag     = false;
       freeRunning        = false;
@@ -173,11 +173,11 @@ void control() {
       freeRunningCounter = 0;
     }
   }
-  
+
   if (fabs(Temper - curTarget) < ARRIVAL_DELTA && !targetTempFlag) {
     isTargetArrival = true;
   }
-  
+
   if (isTargetArrival || !freeRunning) {
     controlPID();
   }
@@ -186,13 +186,13 @@ void control() {
 void controlPID() {
   Err = curTarget - Temper;
   Err_Sum = constrain(Err_Sum + Err * dt, -KI_MAX, KI_MAX);
-  
+
   PID = KP * Err + KI * Err_Sum + KD * (Err - Err_Pre);
-  
+
   Err_Pre = Err;
-  
+
   PID = constrain(PID, 0, 255);
-  
+
   analogWrite(PIN_HEATER, PID);
   digitalWrite(PIN_FAN, Err < -2 ? HIGH : LOW);
 }
@@ -200,18 +200,18 @@ void controlPID() {
 void findPID() {
   double dist = fabs(preTarget - PID_SET[0][0]) + fabs(curTarget - PID_SET[0][1]);
   double temp;
-  
+
   int index = 0;
-  
+
   for (int i = 1; i < 5; i++) {
     temp = fabs(preTarget - PID_SET[i][0]) + fabs(curTarget - PID_SET[i][1]);
-    
+
     if (temp < dist) {
       dist  = temp;
       index = i;
     }
   }
-  
+
   KP = PID_SET[index][2];
   KI = PID_SET[index][3];
   KD = PID_SET[index][4];
@@ -222,12 +222,12 @@ void requestEvent() {
     Protocol.Data1 = (int) (Temper);
     Protocol.Data2 = (int) (Temper * 100) % 100;
   }
-  
+
   if (Protocol.Command == 'S') {
     Protocol.Data1 = Status;
     Protocol.Data2 = 0;
   }
-  
+
   Wire.write(Protocol.Command);
   Wire.write(Protocol.Data1);
   Wire.write(Protocol.Data2);
@@ -238,36 +238,36 @@ void receiveEvent(int len) {
     // for ignore the command packet
     if(len == 4){
       byte dummy = Wire.read();
-      
+
       Protocol.Command = Wire.read();
       Protocol.Data1 = Wire.read();
       Protocol.Data2 = Wire.read();
-    
+
       if (Protocol.Command == 'R') {   // Reset
         Status = STATUS_READY;
         reset();
       }
-    
+
       if (Status != STATUS_ERR) {
         if (Protocol.Command == 'T') { // Temperature
           Status = STATUS_RUN;
           preTarget = curTarget;
           curTarget = Protocol.Data1;
           findPID();
-          
+
           targetTempFlag  = preTarget > curTarget;
           freeRunning     = false;
           isTargetArrival = false;
         }
-      
+
         if (Protocol.Command == 'F') { // Fan
           reset();
-          
+
           Status = STATUS_READY;
           Fan = Protocol.Data1;
         }
       }
-    
+
 #ifdef DEBUG
     printProtocol();
 #endif
@@ -278,17 +278,17 @@ void receiveEvent(int len) {
 void reset() {
   Err_Sum             = 0.0f;
   Err_Pre             = 0.0f;
-  
+
   preTarget           = 0.0f;
   curTarget           = 0.0f;
-  
+
   Fan                 = 0;
-  
+
   freeRunning         = false;
   targetTempFlag      = false;
   isTargetArrival     = false;
   freeRunningCounter  = 0;
-  
+
   controlOff();
 }
 

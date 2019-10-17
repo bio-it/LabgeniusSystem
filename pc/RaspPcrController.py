@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import time
+import os
 
 import zmq
 import smbus
@@ -11,10 +12,12 @@ import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+PCR_PORT = os.environ.get('PCR_PORT', '7001')
+
 # Main loop
 context = zmq.Context()
 listener = context.socket(zmq.REP)
-listener.bind('tcp://*:6060')
+listener.bind('tcp://*:%s' % PCR_PORT)
 
 # listener.setsockopt(zmq.RCVTIMEO, 500)
 # For emulator data

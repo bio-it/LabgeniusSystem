@@ -9,6 +9,8 @@ import logging
 import zmq
 import smbus
 
+import os
+
 from enum import IntEnum
 import math
 
@@ -40,7 +42,7 @@ logger.addHandler(fileHandler)
 
 logger.info("Logger started!")
 # zmq setting
-PCR_PORT = 6060
+PCR_PORT = os.environ.get('PCR_PORT', '7001')
 
 # For emulating PCR
 # Send message to zmq server for getting temperature data.
@@ -52,7 +54,7 @@ class PCRThread(threading.Thread):
         self.daemon = True
         self.context = zmq.Context()
         self.client = self.context.socket(zmq.REQ)
-        self.client.connect('tcp://localhost:%d' % PCR_PORT)
+        self.client.connect('tcp://localhost:%s' % PCR_PORT)
 
         self.running = False
         self.completePCR = False
