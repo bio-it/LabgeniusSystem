@@ -5,7 +5,7 @@ import time
 import os
 
 import zmq
-import smbus
+import hid
 
 import logging
 
@@ -66,7 +66,10 @@ emulator = Emulator()
 emulator.start()
 """
 
-i2c = smbus.SMBus(1)
+vid = 0x04d8
+pid = 0x0041
+
+dev = hid.Device(vid, pid)
 ADDRESS = 0x08
 
 while True:
