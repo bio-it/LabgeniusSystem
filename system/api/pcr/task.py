@@ -98,6 +98,7 @@ class PCRThread(threading.Thread):
         self.filterIndex = 0
         self.currentCycle = 0
         self.filterRunning = False
+        self.shotCounter = 0
 
         # load recent protocol first
         self.protocols = []
@@ -213,6 +214,46 @@ class PCRThread(threading.Thread):
                         else:   # SHOT label
                             print(self.filters)
 
+                            # Check current filter
+                            filters = ['FAM', 'HEX', 'ROX', 'CY5']
+
+                            for idx, filterName in enumerate(filters):
+                                if self.filterIndex == idx:
+                                    # check this filter is used
+                                    if not filterName in self.filters:
+                                        self.filterIndex = idx+1
+
+                            # 4 is last filter
+                            if self.filterIndex == 4:
+                                self.filterIndex = 0
+                                self.currentCycle += 1
+
+                                # if need to save the log, write here
+                            else: # in progress
+                                if self.filterRunning:
+                                    # TODO: Check the motor moving is done.
+
+                                    # turn on the led, save the result and turn off the led
+                                    self.shotCounter += 1
+                                    if self.shotCounter >= 2:
+                                        # save the filter data
+                                        self.photodiodes[self.filterIndex].append(self.photodiode)
+
+                                        # save the filter data
+                                        logger.info("Save the filter data[%d] : %d" % (self.filterIndex, self.photodiode))
+
+                                        self.shotCounter = 0
+
+                                        # next filter
+                                        self.filterIndex += 1
+                                        self.filterRunning = False
+                                else:
+                                    self.filterRunning = True
+                                    # Run the motor
+
+                                # retry the SHOT command
+                                self.currentActionNumber -= 1
+
                     else:   # the action is running now.
                         if not self.targetArrival:   # not yet arrived the target temperature.
                             # for timeout routine, currently ignore it.
@@ -261,7 +302,7 @@ class PCRThread(threading.Thread):
             self.serialNumber = result["serialNumber"]
 
             # Check the state
-            if self.currentCommand == Command.PCR_STOP:
+            if self.currentCommand == Command.PCR_STOP and self.state == State.READY:
                 self.currentCommand = Command.READY
 
             # 50 millesecond but almost take 100ms
@@ -369,7 +410,8 @@ class PCRThread(threading.Thread):
             "protocols" : protocols,
             "protocolName" : self.protocolName,
             "filters" : self.filters,
-            "serialNumber" : self.serialNumber
+            "serialNumber" : self.serialNumber,
+            "photodiodes" : self.photodiodes
         }
         # For GUI display information.
         # Return the status information.

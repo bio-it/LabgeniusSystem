@@ -89,3 +89,10 @@ def editProtocol(idx, filters, protocol):
 	conn.close()
 
 	return result
+
+# graph data must use string with '\n'
+def saveHistory(testDate, target, filterData, ct, result, graphdata):
+	conn = db.connect('database.db')
+	conn.execute("insert into history (testdate, target, filter, ct, result, graphdata) values('%s', '%s', '%s', '%s', '%s', '%s')" % (testDate, target, filterData, ct, result, graphdata))
+	conn.commit()
+	conn.close()
