@@ -102,12 +102,18 @@ class PCRThread(threading.Thread):
 
         # load recent protocol first
         self.protocols = []
+        self.magnetoProtocols = []
+
         protocolData = util.getRecentProtocol()
         self.protocolName = protocolData[0]
         self.filters = protocolData[1]
+        self.filterNames = protocolData[2]
+        self.filterCts = protocolData[3]
 
-        for protocol in protocolData[2]:
+        for protocol in protocolData[4]:
             self.protocols.append(Protocol(protocol['label'], float(protocol['temp']), int(protocol['time'])))
+
+        self.magnetoProtocols = protocolData[5]
 
         logger.info(self.protocols)
         self.totalActionNumber = len(self.protocols)
@@ -337,12 +343,18 @@ class PCRThread(threading.Thread):
 
         # load recent protocol first
         self.protocols = []
+        self.magnetoProtocols = []
+
         protocolData = util.getRecentProtocol()
         self.protocolName = protocolData[0]
         self.filters = protocolData[1]
+        self.filterNames = protocolData[2]
+        self.filterCts = protocolData[3]
 
-        for protocol in protocolData[2]:
+        for protocol in protocolData[4]:
             self.protocols.append(Protocol(protocol['label'], float(protocol['temp']), int(protocol['time'])))
+
+        self.magnetoProtocols = protocolData[5]
 
         logger.info(self.protocols)
 
