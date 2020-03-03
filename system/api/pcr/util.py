@@ -43,12 +43,12 @@ def getRecentProtocol():
 			magnetoProtocol = defaultMagnetoProtocol
 
 		else: # Load the first protocol.
-			protocolName = protocolList[0][0]
-			filters = protocolList[0][1]
-			filterNames = protocolList[0][2]
-			filterCts = protocolList[0][3]
-			protocol = protocolList[0][4]
-			magnetoProtocol = protocolList[0][5]
+			protocolName = protocolList[0][1]
+			filters = protocolList[0][2]
+			filterNames = protocolList[0][3]
+			filterCts = protocolList[0][4]
+			protocol = protocolList[0][5]
+			magnetoProtocol = protocolList[0][6]
 
 			# save to list data
 			protocol = json.loads(protocol)
@@ -70,7 +70,7 @@ def setRecentProtocol(name, filters, filterNames, filterCts, protocol, magnetoPr
 # Protocol database
 def getProtocolList():
 	conn = db.connect('database.db')
-	cursor = conn.execute('select name, filters, filter_names, filter_cts, protocol, magneto_protocol from protocols')
+	cursor = conn.execute('select id, name, filters, filter_names, filter_cts, protocol, magneto_protocol from protocols')
 	data = cursor.fetchall()
 	conn.close()
 	return data
