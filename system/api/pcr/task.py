@@ -50,9 +50,29 @@ logger.info("Logger started!")
 # zmq setting
 PCR_PORT = os.environ.get('PCR_PORT', '7001')
 
-# For emulating PCR
-# Send message to zmq server for getting temperature data.
-#
+# thread for pcr state
+class PCRStateThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        # Daemon setting
+        self.daemon = True
+        self.context = zmq.Context()
+        self.client = self.context.socket(zmq.REQ)
+        self.client.connect('tcp://localhost:%s' % PCR_PORT)
+
+     # For getting the device status
+    def run(self):
+        roundTimer = time.time()
+        while True:
+            # Protocol task
+            # Only check when the PCR is running and 1 sec
+            currentTime = time.time()
+
+            if currentTime - roundTimer >= 1:
+                # reset the timer
+                roundTimer = time.time()
+
+
 class PCRThread(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -420,8 +440,11 @@ class PCRThread(threading.Thread):
             "totalActionNumber" : self.totalActionNumber,
             "elapsedTime" : self.elapsedTime,
             "protocols" : protocols,
+            "magnetoProtocols" : self.magnetoProtocols,
             "protocolName" : self.protocolName,
             "filters" : self.filters,
+            "filterNames" : self.filterNames,
+            "filterCts" : self.filterCts,
             "serialNumber" : self.serialNumber,
             "photodiodes" : self.photodiodes
         }

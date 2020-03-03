@@ -98,6 +98,21 @@ class Status(Resource):
 		return response, 200
 
 class ReloadProtocol(Resource):
+	def get(self):
+		result = pcrThread.reloadProtocol()
+
+		if result:
+			response = {
+				'result' : 'ok'
+			}
+		else:
+			response = {
+				'result' : 'fail',
+				'reason' : 'PCR is running.'
+			}
+
+		return response, 200
+
 	def post(self):
 		result = pcrThread.reloadProtocol()
 
