@@ -263,10 +263,10 @@ class PCRThread(threading.Thread):
                                     self.shotCounter += 1
                                     if self.shotCounter >= 2:
                                         # save the filter data
-                                        self.photodiodes[self.filterIndex].append(self.photodiode)
+                                        self.photodiodes[self.filterIndex].append(self.currentPhotodiode)
 
                                         # save the filter data
-                                        logger.info("Save the filter data[%d] : %d" % (self.filterIndex, self.photodiode))
+                                        logger.info("Save the filter data[%d] : %d" % (self.filterIndex, self.currentPhotodiode))
 
                                         self.shotCounter = 0
 
@@ -465,6 +465,10 @@ class PCRThread(threading.Thread):
         return self.running
 
     def processCleanupPCR(self):
+        # Check the complete the PCR for saving the history
+        if self.completePCR:
+            pass
+
         self.initValues()
         self.running = False
         # This value for notification on this function, not used yet.
