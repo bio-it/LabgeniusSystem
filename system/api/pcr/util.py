@@ -106,10 +106,10 @@ def editProtocol(idx, filters, filterNames, filter_cts, protocol, magnetoProtoco
 
 	return result
 
-# graph data must use string with '\n'
-def saveHistory(testDate, target, filterData, ct, result, graphdata):
+# all raw data using json dumps function.
+def saveHistory(testDate, target, filterData, ct, result, graphdata, tempData):
 	conn = db.connect('database.db')
-	conn.execute("insert into history (testdate, target, filter, ct, result, graphdata) values('%s', '%s', '%s', '%s', '%s', '%s')" % (testDate, target, filterData, ct, result, graphdata))
+	conn.execute("insert into history (testdate, target, filter, ct, result, graphdata, tempdata) values('%s', '%s', '%s', '%s', '%s', '%s', '%s')" % (testDate, target, filterData, ct, result, graphdata, tempData))
 	conn.commit()
 	conn.close()
 

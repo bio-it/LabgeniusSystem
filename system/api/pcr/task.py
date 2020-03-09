@@ -13,6 +13,7 @@ import os
 
 from enum import IntEnum
 import math
+import json
 
 from api.pcr import util
 
@@ -45,32 +46,9 @@ logger = logging.getLogger(__name__)
 fileHandler = logging.FileHandler("pcr.log")
 logger.addHandler(fileHandler)
 
-
 logger.info("Logger started!")
 # zmq setting
 PCR_PORT = os.environ.get('PCR_PORT', '7001')
-
-# thread for pcr state
-class PCRStateThread(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        # Daemon setting
-        self.daemon = True
-        self.context = zmq.Context()
-        self.client = self.context.socket(zmq.REQ)
-        self.client.connect('tcp://localhost:%s' % PCR_PORT)
-
-     # For getting the device status
-    def run(self):
-        roundTimer = time.time()
-        while True:
-            # Protocol task
-            # Only check when the PCR is running and 1 sec
-            currentTime = time.time()
-
-            if currentTime - roundTimer >= 1:
-                # reset the timer
-                roundTimer = time.time()
 
 
 class PCRThread(threading.Thread):
@@ -126,9 +104,30 @@ class PCRThread(threading.Thread):
 
         protocolData = util.getRecentProtocol()
         self.protocolName = protocolData[0]
-        self.filters = protocolData[1]
-        self.filterNames = protocolData[2]
-        self.filterCts = protocolData[3]
+        self.filters = ["", "", "", ""]
+        self.filterNames = ["", "", "", ""]
+        self.filterCts = ["", "", "", ""]
+
+        # filter string to list
+        filterStrings = ['FAM', 'HEX', 'ROX', 'CY5']
+        tempFilters = [x.strip() for x in protocolData[1].split(',')]
+        tempFilterNames = [x.strip() for x in protocolData[2].split(',')]
+        tempFilterCts = [x.strip() for x in protocolData[3].split(',')]
+
+        idx2 = 0
+        for idx, filterName in enumerate(filterStrings):
+            # check this filter is used
+            if filterName in tempFilters:
+                self.filters[idx] = tempFilters[idx2]
+                self.filterNames[idx] = tempFilterNames[idx2]
+                self.filterCts[idx] = tempFilterCts[idx2]
+
+                idx2 += 1
+
+        # For history
+        self.result = ["", "", "", ""]
+        self.resultCts = ["", "", "", ""]
+        self.tempLogger = []
 
         for protocol in protocolData[4]:
             self.protocols.append(Protocol(protocol['label'], float(protocol['temp']), int(protocol['time'])))
@@ -327,6 +326,9 @@ class PCRThread(threading.Thread):
             self.currentPhotodiode = result["photodiode"]
             self.serialNumber = result["serialNumber"]
 
+            if self.running:
+                self.tempLogger.append("%d\t%.1f" % (len(self.tempLogger), self.currentTemp))
+
             # Check the state
             if self.currentCommand == Command.PCR_STOP and self.state == State.READY:
                 self.currentCommand = Command.READY
@@ -367,14 +369,35 @@ class PCRThread(threading.Thread):
 
         protocolData = util.getRecentProtocol()
         self.protocolName = protocolData[0]
-        self.filters = protocolData[1]
-        self.filterNames = protocolData[2]
-        self.filterCts = protocolData[3]
+        self.filters = ["", "", "", ""]
+        self.filterNames = ["", "", "", ""]
+        self.filterCts = ["", "", "", ""]
+
+        # filter string to list
+        filterStrings = ['FAM', 'HEX', 'ROX', 'CY5']
+        tempFilters = [x.strip() for x in protocolData[1].split(',')]
+        tempFilterNames = [x.strip() for x in protocolData[2].split(',')]
+        tempFilterCts = [x.strip() for x in protocolData[3].split(',')]
+
+        idx2 = 0
+        for idx, filterName in enumerate(filterStrings):
+            # check this filter is used
+            if filterName in tempFilters:
+                self.filters[idx] = tempFilters[idx2]
+                self.filterNames[idx] = tempFilterNames[idx2]
+                self.filterCts[idx] = tempFilterCts[idx2]
+
+                idx2 += 1
 
         for protocol in protocolData[4]:
             self.protocols.append(Protocol(protocol['label'], float(protocol['temp']), int(protocol['time'])))
 
         self.magnetoProtocols = protocolData[5]
+
+        # For history
+        self.result = ["", "", "", ""]
+        self.resultCts = ["", "", "", ""]
+        self.tempLogger = []
 
         logger.info(self.protocols)
 
@@ -445,6 +468,8 @@ class PCRThread(threading.Thread):
             "filters" : self.filters,
             "filterNames" : self.filterNames,
             "filterCts" : self.filterCts,
+            "result" : self.result,
+            "resultCts" : self.resultCts,
             "serialNumber" : self.serialNumber,
             "photodiodes" : self.photodiodes
         }
@@ -467,7 +492,19 @@ class PCRThread(threading.Thread):
     def processCleanupPCR(self):
         # Check the complete the PCR for saving the history
         if self.completePCR:
-            pass
+            # save the history
+            # need to change the timedelta for utc+9 now, when the internet connection is established, don't use this timedelta function.
+            currentDate = (datetime.datetime.now() + datetime.timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
+            target = json.dumps(self.filterNames)
+            filterData = json.dumps(self.filters)
+            ct = json.dumps(self.resultCts)
+            result = json.dumps(self.result)
+            graphData = json.dumps(self.photodiodes)
+            tempData = json.dumps(self.tempLogger)
+            logger.info("history saved!")
+
+            util.saveHistory(currentDate, target, filterData, ct, result, graphData, tempData)
+
 
         self.initValues()
         self.running = False

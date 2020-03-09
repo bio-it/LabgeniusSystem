@@ -271,6 +271,7 @@ class NewProtocol(Resource):
 
 		return response, 200
 
+# TODO: Reload the protocol
 class DeleteProtocol(Resource):
 	def post(self):
 		requestData = request.data
@@ -297,6 +298,7 @@ class DeleteProtocol(Resource):
 
 		return response, 200
 
+# TODO: select the protocol
 class EditProtocol(Resource):
 	def post(self):
 		requestData = request.data
