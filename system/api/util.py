@@ -72,8 +72,14 @@ def getProtocolList():
 	conn = db.connect('database.db')
 	cursor = conn.execute('select id, name, filters, filter_names, filter_cts, protocol, magneto_protocol from protocols')
 	data = cursor.fetchall()
+
+	result = []
+	for d in data:
+		temp = {"id":d[0], "name":d[1], "filters":d[2], "filterNames":d[3], "filterCts":d[4], "protocol":d[5], "magnetoProtocol":d[6]}
+		result.append(temp)
+
 	conn.close()
-	return data
+	return result
 
 def insertNewProtocol(name, filters, filterNames, filterCts, protocol, magnetoProtocol):
 	conn = db.connect('database.db')
@@ -85,8 +91,14 @@ def getProtocol(idx):
 	conn = db.connect('database.db')
 	cursor = conn.execute('select name, filters, filter_names, filter_cts, protocol, magneto_protocol from protocols where id=%d' % idx)
 	data = cursor.fetchall()
+
+	result = {}
+
+	if len(data) == 1:
+		result = {"name":data[0][0], "filters":data[0][1], "filterNames":data[0][2], "filterCts":data[0][3], "protocol":data[0][4], "magnetoProtocol":data[0][5]}
+
 	conn.close()
-	return data
+	return result
 
 def deleteProtocol(idx):
 	conn = db.connect('database.db')
@@ -113,3 +125,42 @@ def saveHistory(testDate, target, filterData, ct, result, graphdata, tempData):
 	conn.commit()
 	conn.close()
 
+
+def getHistoryList():
+	conn = db.connect('database.db')
+	cursor = conn.execute("select id, testdate, target, filter, ct, result from history")
+	data = cursor.fetchall()
+
+	result = []
+	for d in data:
+		temp = {"id":d[0], "date":d[1], "target":d[2], "filter":d[3], "ct":d[4], "result":d[5]}
+		result.append(temp)
+
+	conn.close()
+	return result
+
+def getHistoryGraphData(idx):
+	conn = db.connect('database.db')
+	cursor = conn.execute('select graphdata from history where id=%d' % idx)
+	data = cursor.fetchall()
+
+	result = ""
+
+	if len(data) == 1:
+		result = data[0][0]
+
+	conn.close()
+	return result
+
+def getHistoryTempData(idx):
+	conn = db.connect('database.db')
+	cursor = conn.execute('select tempdata from history where id=%d' % idx)
+	data = cursor.fetchall()
+
+	result = ""
+
+	if len(data) == 1:
+		result = data[0][0]
+
+	conn.close()
+	return result

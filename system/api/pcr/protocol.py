@@ -7,7 +7,7 @@ import requests
 
 import json
 
-from api.pcr import util
+from api import util
 
 # logger
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)

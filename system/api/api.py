@@ -6,10 +6,12 @@ from flask_restful import Api
 
 from api.pcr import pcr
 from api.pcr import protocol as pcrProtocol
+from api.history import history as pcrHistory
 
 # list of PCR api
 bp_pcr = Blueprint('api_pcr', __name__)
 bp_pcr_protocol = Blueprint('api_pcr_protocol', __name__)
+bp_history = Blueprint('api_history', __name__)
 
 # For PCR API
 api_pcr = Api(bp_pcr)
@@ -28,3 +30,9 @@ api_pcr_protocol.add_resource(pcrProtocol.NewProtocol, '/new')
 api_pcr_protocol.add_resource(pcrProtocol.DeleteProtocol, '/delete')
 api_pcr_protocol.add_resource(pcrProtocol.EditProtocol, '/edit')
 api_pcr_protocol.add_resource(pcrProtocol.CheckProtocol, '/check')
+
+# For history API
+api_history = Api(bp_history)
+api_history.add_resource(pcrHistory.HistoryList, '/list')
+api_history.add_resource(pcrHistory.HistoryGraphData, '/graphdata')
+api_history.add_resource(pcrHistory.HistoryTempData, '/tempdata')
