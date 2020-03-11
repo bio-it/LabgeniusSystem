@@ -21,7 +21,6 @@ api_pcr.add_resource(pcr.Stop, '/stop')
 api_pcr.add_resource(pcr.Status, '/status')
 api_pcr.add_resource(pcr.ReloadProtocol, '/reloadProtocol')
 
-
 # For PCR Protocol Api
 api_pcr_protocol = Api(bp_pcr_protocol)
 api_pcr_protocol.add_resource(pcrProtocol.ProtocolList, '/list')

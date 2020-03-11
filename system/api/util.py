@@ -5,9 +5,19 @@ import logging
 import sqlite3 as db
 import json
 
+import socket
+import fcntl
+import struct
+
 # logger
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def getEth0IpAddress():
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	return socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', b'eth0'))[20:24])
+
 
 def getRecentProtocol():
 	# default protocol
