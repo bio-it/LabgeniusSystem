@@ -203,15 +203,15 @@ class ProtocolSelect(Resource):
 				}
 			else:
 				# Request the PCR status
-				status = requests.post('http://%s:6009/api/pcr/status' % util.getEth0IpAddress())
+				status = requests.post(('http://%s:6009/api/pcr/status' % util.getEth0IpAddress()))
 
 				# not running
 				if not status.json()["data"]["running"]:
 					# Setting the protocol first
 					# name, filters, filterNames, filterCts, protocol, magnetoProtocol
-					util.setRecentProtocol(protocol[0][0], protocol[0][1], protocol[0][2], protocol[0][3], protocol[0][4], protocol[0][5])
+					util.setRecentProtocol(protocol["name"], protocol["filters"], protocol["filterNames"], protocol["filterCts"], protocol["protocol"], protocol["magnetoProtocol"])
 
-					result = requests.post('http://%s:6009/api/pcr/reloadProtocol' % util.getEth0IpAddress())
+					result = requests.post(('http://%s:6009/api/pcr/reloadProtocol' % util.getEth0IpAddress()))
 
 					logger.info(result.json())
 
