@@ -256,22 +256,26 @@ class NewProtocol(Resource):
 
 			if response['result'] == 'ok':
 				# save the protocol into the database with name
-				# TODO: name validation
 				name = protocol[0]
 
-				# need to make the protocol type of string
-				filters = protocol[1]
-				filterNames = protocol[2]
-				filterCts = protocol[3]
+				if util.checkProtocolExist(name):
+					response = {
+						'result' : 'fail',
+						'reason' : 'Already exist the protocol name.'
+					}
+				else:
+					# need to make the protocol type of string
+					filters = protocol[1]
+					filterNames = protocol[2]
+					filterCts = protocol[3]
 
-				protocol, magnetoProtocol = convertToProtocol(protocol[4:])
-				logger.info(protocol)
-				logger.info(magnetoProtocol)
-				util.insertNewProtocol(name, filters, filterNames, filterCts, protocol, magnetoProtocol)
+					protocol, magnetoProtocol = convertToProtocol(protocol[4:])
+					logger.info(protocol)
+					logger.info(magnetoProtocol)
+					util.insertNewProtocol(name, filters, filterNames, filterCts, protocol, magnetoProtocol)
 
 		return response, 200
 
-# TODO: Reload the protocol
 class DeleteProtocol(Resource):
 	def post(self):
 		requestData = request.data
@@ -279,17 +283,76 @@ class DeleteProtocol(Resource):
 
 		try:
 			idx = int(requestData)
-			result = util.deleteProtocol(idx)
 
-			if result:
-				response = {
-					'result' : 'ok',
-				}
-			else:
+			# check protocol name
+			currentProtocol = util.getProtocol(idx)
+
+			if len(currentProtocol) == 0:
 				response = {
 					'result' : 'fail',
-					'reason' : 'Invalid range of idx parameter'
+					'reason' : 'Invalid protocol data for idx'
 				}
+			else:
+				currentProtocolName = currentProtocol["name"]
+
+				# Check the current protocol is same protocol.
+				status = requests.post(('http://%s:6009/api/pcr/status' % util.getEth0IpAddress()))
+
+				if status.json()["data"]["protocolName"] == currentProtocolName:
+					# check the device is running.
+					if status.json()["data"]["running"]:
+						response = {
+							'result' : 'fail',
+							'reason' : 'this protocol is running now.'
+						}
+					else:
+						result = util.deleteProtocol(idx)
+
+						if result:
+							# remove the recent protocol
+							util.clearRecentProtocol()
+
+							result = requests.post(('http://%s:6009/api/pcr/reloadProtocol' % util.getEth0IpAddress()))
+							logger.info(result.json())
+
+							if result.json()["result"] == "ok":
+								response = {
+									'result' : 'ok'
+								}
+							else:
+								response = {
+									'result' : 'fail',
+									'reason' : 'Can\'t change the protocol when the PCR is running'
+								}
+						else:
+							response = {
+								'result' : 'fail',
+								'reason' : 'Invalid range of idx parameter'
+							}
+				else:
+					result = util.deleteProtocol(idx)
+
+					if result:
+						# remove the recent protocol
+						util.clearRecentProtocol()
+
+						result = requests.post(('http://%s:6009/api/pcr/reloadProtocol' % util.getEth0IpAddress()))
+						logger.info(result.json())
+
+						if result.json()["result"] == "ok":
+							response = {
+								'result' : 'ok'
+							}
+						else:
+							response = {
+								'result' : 'fail',
+								'reason' : 'Can\'t change the protocol when the PCR is running'
+							}
+					else:
+						response = {
+							'result' : 'fail',
+							'reason' : 'Invalid range of idx parameter'
+						}
 		except:
 			response = {
 				'result' : 'fail',
@@ -298,7 +361,6 @@ class DeleteProtocol(Resource):
 
 		return response, 200
 
-# TODO: select the protocol
 class EditProtocol(Resource):
 	def post(self):
 		requestData = request.data
@@ -318,26 +380,74 @@ class EditProtocol(Resource):
 				response = checkProtocol(lines[1:])
 
 				if response['result'] == 'ok':
-					# save the protocol into the database with name
+					# check protocol name
+					currentProtocol = util.getProtocol(idx)
 
-					# need to make the protocol type of string
-					filters = lines[1]
-					filterNames = lines[2]
-					filterCts = lines[3]
-					protocol, magnetoProtocol = convertToProtocol(lines[4:])
-
-					result = util.editProtocol(idx, filters, filterNames, filterCts, protocol, magnetoProtocol)
-					logger.info(result)
-
-					if result:
-						response = {
-							'result' : 'ok',
-						}
-					else:
+					if len(currentProtocol) == 0:
 						response = {
 							'result' : 'fail',
-							'reason' : 'Invalid range of idx parameter'
+							'reason' : 'Invalid protocol data for idx'
 						}
+					else:
+						currentProtocolName = currentProtocol["name"]
+
+						# Check the current protocol is same protocol.
+						status = requests.post(('http://%s:6009/api/pcr/status' % util.getEth0IpAddress()))
+
+						# getting the protocol data from user
+						filters = lines[1]
+						filterNames = lines[2]
+						filterCts = lines[3]
+						protocol, magnetoProtocol = convertToProtocol(lines[4:])
+
+						if status.json()["data"]["protocolName"] == currentProtocolName:
+							# check the device is running.
+							if status.json()["data"]["running"]:
+								response = {
+									'result' : 'fail',
+									'reason' : 'this protocol is running now.'
+								}
+							else:
+								# not running, change the protocol first.
+								result = util.editProtocol(idx, filters, filterNames, filterCts, protocol, magnetoProtocol)
+								logger.info(result)
+
+								if result:
+									# need to reload the protocols
+									util.setRecentProtocol(currentProtocolName, filters, filterNames, filterCts, protocol, magnetoProtocol)
+
+									result = requests.post(('http://%s:6009/api/pcr/reloadProtocol' % util.getEth0IpAddress()))
+
+									logger.info(result.json())
+
+									if result.json()["result"] == "ok":
+										response = {
+											'result' : 'ok'
+										}
+									else:
+										response = {
+											'result' : 'fail',
+											'reason' : 'Can\'t change the protocol when the PCR is running'
+										}
+								else:
+									response = {
+										'result' : 'fail',
+										'reason' : 'Invalid range of idx parameter'
+									}
+						else:
+							# change the protocol.
+							result = util.editProtocol(idx, filters, filterNames, filterCts, protocol, magnetoProtocol)
+							logger.info(result)
+
+							if result:
+								response = {
+									'result' : 'ok',
+								}
+							else:
+								response = {
+									'result' : 'fail',
+									'reason' : 'Invalid range of idx parameter'
+								}
 			except:
 				response = {
 					'result' : 'fail',

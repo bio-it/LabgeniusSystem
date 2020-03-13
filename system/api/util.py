@@ -8,6 +8,7 @@ import json
 import socket
 import fcntl
 import struct
+import os
 
 # logger
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -17,7 +18,6 @@ logger = logging.getLogger(__name__)
 def getEth0IpAddress():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	return socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', b'eth0'))[20:24])
-
 
 def getRecentProtocol():
 	# default protocol
@@ -77,6 +77,10 @@ def setRecentProtocol(name, filters, filterNames, filterCts, protocol, magnetoPr
 		pickle.dump(protocol, f)
 		pickle.dump(magnetoProtocol, f)
 
+def clearRecentProtocol():
+	if os.path.exists("database.prop"):
+  		os.remove("database.prop")
+
 # Protocol database
 def getProtocolList():
 	conn = db.connect('database.db')
@@ -96,6 +100,17 @@ def insertNewProtocol(name, filters, filterNames, filterCts, protocol, magnetoPr
 	conn.execute("insert into protocols (name, filters, filter_names, filter_cts, protocol, magneto_protocol) values('%s', '%s', '%s', '%s', '%s', '%s')" % (name, filters, filterNames, filterCts, protocol, magnetoProtocol))
 	conn.commit()
 	conn.close()
+
+def checkProtocolExist(name):
+	conn = db.connect('database.db')
+	cursor = conn.execute('select name from protocols where name=%s' % name)
+	data = cursor.fetchall()
+	conn.close()
+
+	if len(data) != 0:
+		return True
+	else:
+		return False
 
 def getProtocol(idx):
 	conn = db.connect('database.db')
