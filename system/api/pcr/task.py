@@ -74,6 +74,7 @@ class PCRThread(threading.Thread):
         self.currentActionNumber = -1
         self.totalActionNumber = 0
         self.state = State.READY
+        self.stateString = 'idle'
         self.currentTemp = 20.0
         self.startTime = None
 
@@ -326,12 +327,16 @@ class PCRThread(threading.Thread):
             self.currentPhotodiode = result["photodiode"]
             self.serialNumber = result["serialNumber"]
 
+            if self.state == State.RUNNING:
+                stateString = 'PCR in progress'
+
             if self.running:
                 self.tempLogger.append("%d\t%.1f" % (len(self.tempLogger), self.currentTemp))
 
             # Check the state
             if self.currentCommand == Command.PCR_STOP and self.state == State.READY:
                 self.currentCommand = Command.READY
+                self.stateString = 'idle'
 
             # 50 millesecond but almost take 100ms
             time.sleep(0.05)
@@ -347,6 +352,7 @@ class PCRThread(threading.Thread):
         self.currentActionNumber = -1
         self.currentCycle = 0
         self.state = State.READY
+        self.stateString = 'idle'
         self.startTime = None
         self.leftGotoCount = -1
 
@@ -455,6 +461,7 @@ class PCRThread(threading.Thread):
         data = {
             "running" : self.running,
             "state" : int(self.state),
+            "stateString" : self.stateString,
             "temperature" : self.currentTemp,
             "remainingSec" : self.leftSec,
             "remainingTotalSec" : self.leftTotalSec,

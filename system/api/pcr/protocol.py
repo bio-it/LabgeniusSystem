@@ -144,7 +144,16 @@ def checkProtocol(protocol):
 				# end of for state
 
 				# check the validation of Magneto protocol.
+				magnetoProtocol = protocol[index+1:]
+				magnetoResult = ""
+
+				magnetoProtocolList = ["goto", "filter", "mixing", "waiting", "pumping up", "pumping sup", "pumping down", "pumping sdown", "ready", "home", "magnet on", "magnet off", "heating", "pcr"]
+
 				# TODO
+				# for cmd in magnetoProtocol:
+
+
+
 
 			# end of filter check
 	# end of line number check
